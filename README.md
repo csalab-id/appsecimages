@@ -1,2 +1,0 @@
-# appsecpipeline
-Application Security Pipeline

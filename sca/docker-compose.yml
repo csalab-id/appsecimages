@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  trufflehog:
+    hostname: trufflehog.lab
+    build:
+      context: ./
+      dockerfile: build/trufflehog.Dockerfile
+    image: 'csalab/trufflehog:latest'
+    networks:
+      sca:
+
+  gitleaks:
+    hostname: gitleaks.lab
+    build:
+      context: ./
+      dockerfile: build/gitleaks.Dockerfile
+    image: 'csalab/gitleaks:latest'
+    networks:
+      sca:
+
+networks:
+  sca:
+    driver: bridge

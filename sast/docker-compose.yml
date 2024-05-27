@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  sonarqube-datacenter:
+    hostname: datacenter.sonarqube.lab
+    build:
+      context: ./
+      dockerfile: build/sonarqube.Dockerfile
+    image: 'csalab/sonarqube-datacenter:10.2.0.77647'
+    restart: always
+    volumes:
+      - sonarqube:/home/sonarqube/sonarqube
+    networks:
+      sast:
+
+  semgrep:
+    hostname: semgrep.lab
+    build:
+      context: ./
+      dockerfile: build/semgrep.Dockerfile
+    image: 'csalab/semgrep:latest'
+    networks:
+      sast:
+
+networks:
+  sast:
+    driver: bridge
+
+volumes:
+  sonarqube: {}

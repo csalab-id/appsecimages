@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  arachni:
+    image: 'csalab/arachni:latest'
+    hostname: arachni.lab
+    restart: always
+    build:
+      context: ./build/
+      dockerfile: arachni.Dockerfile
+    volumes:
+      - arachni:/opt/arachni
+    networks:
+      dast:
+
+  dast-ci:
+    image: 'csalab/dast-ci:latest'
+    hostname: dast-ci.lab
+    build:
+      context: ./build/
+      dockerfile: dast-ci.Dockerfile
+    networks:
+      dast:
+
+networks:
+  dast:
+    driver: bridge
+
+volumes:
+  arachni: {}
