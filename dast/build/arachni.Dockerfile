@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 WORKDIR /root
 RUN apt update && \
     apt -y install curl wget unzip && \
-    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     dpkg -i google-chrome-stable_current_amd64.deb || true && \
     apt -f -y install && \
     useradd -m -c "Dast User" -s /bin/bash -d /home/dast dast && \
