@@ -1,7 +1,7 @@
 pipeline {
     agent none
     stages {
-        stage('DAST') {
+        stage('Running DAST') {
             parallel {
                 stage('Nmap') {
                     agent {
@@ -117,20 +117,20 @@ pipeline {
                         }
                     }
                 }
-                stage('Generate report') {
-                    agent {
-                        docker {
-                            image 'csalab/dast:latest'
-                        }
-                    }
-                    steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh 'echo "Generating report"'
-                            sh 'python3 /root/xml2json.py nmap.xml nmap.json'
-                            sh 'ls -l *.json'
-                            sh 'rm -rf *.xml *.json reports'
-                        }
-                    }
+            }
+        }
+        stage('Generate report') {
+            agent {
+                docker {
+                    image 'csalab/dast:latest'
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh 'echo "Generating report"'
+                    sh 'python3 /root/xml2json.py nmap.xml nmap.json'
+                    sh 'ls -l *.json'
+                    sh 'rm -rf *.xml *.json reports'
                 }
             }
         }
