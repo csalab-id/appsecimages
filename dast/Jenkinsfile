@@ -7,6 +7,7 @@ pipeline {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
+                            entrypoint 'sh -c'
                         }
                     }
                     steps {
@@ -24,6 +25,7 @@ pipeline {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
+                            entrypoint 'sh -c'
                         }
                     }
                     steps {
@@ -44,6 +46,7 @@ pipeline {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
+                            entrypoint 'sh -c'
                         }
                     }
                     steps {
@@ -75,6 +78,7 @@ pipeline {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
+                            entrypoint 'sh -c'
                         }
                     }
                     steps {
@@ -92,6 +96,7 @@ pipeline {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
+                            entrypoint 'sh -c'
                         }
                     }
                     steps {
@@ -109,6 +114,7 @@ pipeline {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
+                            entrypoint 'sh -c'
                         }
                     }
                     steps {
@@ -123,6 +129,7 @@ pipeline {
             agent {
                 docker {
                     image 'csalab/dast:latest'
+                    entrypoint 'sh -c'
                 }
             }
             steps {
