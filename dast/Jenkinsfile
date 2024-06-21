@@ -18,6 +18,42 @@ pipeline {
                 }
             }
         }
+        stage('Subfinder') {
+            agent {
+                docker {
+                    image 'csalab/dast:latest'
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh '/root/go/bin/subfinder -d ${TARGET} -o subfinder.txt'
+                    sh '/root/go/bin/subfinder -d ${TARGET} -oJ -o subfinder.json'
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts 'subfinder.txt'
+                    archiveArtifacts 'subfinder.json'
+                }
+            }
+        }
+        stage('Httpx') {
+            agent {
+                docker {
+                    image 'csalab/dast:latest'
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh '/root/go/bin/httpx -l subfinder.txt -j -o httpx.json'
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts 'httpx.json'
+                }
+            }
+        }
         stage('Nuclei') {
             agent {
                 docker {

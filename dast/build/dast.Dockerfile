@@ -23,5 +23,5 @@ RUN apk update && \
     go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
     go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest && \
     /root/go/bin/nuclei
-COPY xml2json.py /root/
+COPY dast/xml2json.py /root/
 ENTRYPOINT [ "/bin/sh" ]
