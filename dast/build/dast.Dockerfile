@@ -24,4 +24,3 @@ RUN apk update && \
     go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest && \
     /root/go/bin/nuclei
 COPY dast/xml2json.py /root/
-ENTRYPOINT [ "/bin/sh" ]
