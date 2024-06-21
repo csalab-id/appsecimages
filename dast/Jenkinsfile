@@ -4,7 +4,7 @@ pipeline {
         stage('Nmap') {
             agent {
                 docker {
-                    image 'csalab/dast-ci:latest'
+                    image 'csalab/dast:latest'
                 }
             }
             steps {
@@ -21,7 +21,7 @@ pipeline {
         stage('Nuclei') {
             agent {
                 docker {
-                    image 'csalab/dast-ci:latest'
+                    image 'csalab/dast:latest'
                 }
             }
             steps {
@@ -37,22 +37,22 @@ pipeline {
                 }
             }
         }
-        stage('Zaproxy') {
-            agent {
-                docker {
-                    image 'owasp/zap2docker-stable:latest'
-                }
-            }
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    sh 'zap-baseline.py -I -j -t ${URL_TARGET}'
-                }
-            }
-        }
+        // stage('Zaproxy') {
+        //     agent {
+        //         docker {
+        //             image 'owasp/zap2docker-stable:latest'
+        //         }
+        //     }
+        //     steps {
+        //         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        //             sh 'zap-baseline.py -I -j -t ${URL_TARGET}'
+        //         }
+        //     }
+        // }
         stage('Dirsearch') {
             agent {
                 docker {
-                    image 'csalab/dast-ci:latest'
+                    image 'csalab/dast:latest'
                 }
             }
             steps {
@@ -69,7 +69,7 @@ pipeline {
         stage('Nikto') {
             agent {
                 docker {
-                    image 'csalab/dast-ci:latest'
+                    image 'csalab/dast:latest'
                 }
             }
             steps {
@@ -86,7 +86,7 @@ pipeline {
         stage('Sqlmap') {
             agent {
                 docker {
-                    image 'csalab/dast-ci:latest'
+                    image 'csalab/dast:latest'
                 }
             }
             steps {
@@ -98,7 +98,7 @@ pipeline {
         stage('Generate report') {
             agent {
                 docker {
-                    image 'csalab/dast-ci:latest'
+                    image 'csalab/dast:latest'
                 }
             }
             steps {
