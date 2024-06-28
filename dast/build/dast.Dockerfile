@@ -1,7 +1,8 @@
 FROM golang:1-alpine3.20 as builder
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest && \
     go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
-    go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+    go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest && \
+    go install -v github.com/projectdiscovery/katana/cmd/katana@latest
 
 FROM python:3-alpine
 LABEL maintainer="admin@csalab.id"
@@ -29,6 +30,7 @@ COPY --chmod=0755 dast/xml2json.py /root/
 COPY --from=builder --chown=root:root --chmod=0755 /go/bin/subfinder /usr/local/bin/
 COPY --from=builder --chown=root:root --chmod=0755 /go/bin/httpx /usr/local/bin/
 COPY --from=builder --chown=root:root --chmod=0755 /go/bin/nuclei /usr/local/bin/
+COPY --from=builder --chown=root:root --chmod=0755 /go/bin/katana /usr/local/bin/
 RUN pip install --upgrade pip && \
     pip install -r /root/dirsearch/requirements.txt && \
     pip install xmltodict && \

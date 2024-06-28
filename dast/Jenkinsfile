@@ -1,7 +1,7 @@
 pipeline {
     agent none
     stages {
-        stage('Running DAST') {
+        stage('Portscan') {
             parallel {
                 stage('Nmap') {
                     agent {
@@ -20,7 +20,8 @@ pipeline {
                         }
                     }
                 }
-                stage('Subfinder and Httpx') {
+
+                stage('Fscan') {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
@@ -28,18 +29,70 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '/root/go/bin/subfinder -d ${TARGET} -o subfinder.txt'
-                            sh '/root/go/bin/subfinder -d ${TARGET} -oJ -o subfinder.json'
-                            sh '/root/go/bin/httpx -l subfinder.txt -j -o httpx.json'
+                            sh 'fscan -json -full -h ${TARGET} -p 1-65535 -o fscan.json'
                         }
                     }
                     post {
                         success {
-                            archiveArtifacts 'subfinder.json'
-                            archiveArtifacts 'httpx.json'
+                            archiveArtifacts 'fscan.json'
                         }
                     }
                 }
+            }
+        }
+
+        stage('Projectdiscovery') {
+            parallel {
+                stage('Scanning') {
+                    agent {
+                        docker {
+                            image 'csalab/dast:latest'
+                        }
+                    }
+                    stages {
+                        stage('Subfinder') {
+                            steps {
+                                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                    sh 'subfinder -d ${DOMAIN} -o subfinder.txt'
+                                    sh 'subfinder -d ${DOMAIN} -oJ -o subfinder.json'
+                                }
+                            }
+                            post {
+                                success {
+                                    archiveArtifacts 'subfinder.json'
+                                }
+                            }
+                        }
+
+                        stage('Httpx') {
+                            steps {
+                                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                    sh 'httpx -l subfinder.txt -o httpx.txt'
+                                    sh 'httpx -l subfinder.txt -j -o httpx.json'
+                                }
+                            }
+                            post {
+                                success {
+                                    archiveArtifacts 'httpx.json'
+                                }
+                            }
+                        }
+
+                        stage('Nuclei') {
+                            steps {
+                                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                    sh 'nuclei -l httpx.txt -nc -as -je subdomain-nuclei-as.json'
+                                }
+                            }
+                            post {
+                                success {
+                                    archiveArtifacts 'subdomain-nuclei-as.json'
+                                }
+                            }
+                        }
+                    }
+                }
+
                 stage('Nuclei') {
                     agent {
                         docker {
@@ -48,8 +101,8 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '/root/go/bin/nuclei -u ${URL_TARGET} -nc -je nuclei.json'
-                            sh '/root/go/bin/nuclei -u ${URL_TARGET} -nc -as -je nuclei-as.json'
+                            sh 'nuclei -u ${URL_TARGET} -nc -je nuclei.json'
+                            sh 'nuclei -u ${URL_TARGET} -nc -as -je nuclei-as.json'
                         }
                     }
                     post {
@@ -59,19 +112,8 @@ pipeline {
                         }
                     }
                 }
-                stage('Zaproxy') {
-                    agent {
-                        docker {
-                            image 'zaproxy/zap-stable:latest'
-                        }
-                    }
-                    steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh 'zap-baseline.py -I -j -t ${URL_TARGET}'
-                        }
-                    }
-                }
-                stage('Dirsearch') {
+
+                stage('Katana') {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
@@ -79,15 +121,20 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '/root/dirsearch/dirsearch.py -u ${URL_TARGET} -e php -o dirsearch.json --format=json -q'
+                            sh 'katana -u ${URL_TARGET} -jc -j -or -ob -o katana.json'
                         }
                     }
                     post {
                         success {
-                            archiveArtifacts 'dirsearch.json'
+                            archiveArtifacts 'katana.json'
                         }
                     }
                 }
+            }
+        }
+
+        stage('Vulnscan') {
+            parallel {
                 stage('Nikto') {
                     agent {
                         docker {
@@ -105,7 +152,59 @@ pipeline {
                         }
                     }
                 }
-                stage('Sqlmap') {
+
+                stage('Dastardly') {
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            cleanWs()
+                            sh 'docker pull public.ecr.aws/portswigger/dastardly:latest'
+                            sh '''
+                                docker run --user $(id -u) -v ${WORKSPACE}:${WORKSPACE}:rw \
+                                -e BURP_START_URL=${URL_TARGET} \
+                                -e BURP_REPORT_FILE_PATH=${WORKSPACE}/dastardly-report.xml \
+                                public.ecr.aws/portswigger/dastardly:latest
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                            junit testResults: 'dastardly-report.xml', skipPublishingChecks: true
+                        }
+                    }
+                }
+
+                stage('Zaproxy') {
+                    agent {
+                        docker {
+                            image 'zaproxy/zap-stable:latest'
+                        }
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh 'zap-baseline.py -I -j -t ${URL_TARGET}'
+                        }
+                    }
+                }
+
+                stage('Arachni') {
+                    agent {
+                        docker {
+                            image 'csalab/arachni:latest'
+                            args '--entrypoint=""'
+                        }
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh '/opt/arachni/arachni ${URL_TARGET}'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Dirscan') {
+            parallel {
+                stage('Dirsearch') {
                     agent {
                         docker {
                             image 'csalab/dast:latest'
@@ -113,13 +212,37 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '/root/sqlmap/sqlmap.py -u ${URL_TARGET} --form --random-agent --batch --crawl=10 --dbs'
+                            sh '/root/dirsearch/dirsearch.py -u ${URL_TARGET} -e php -o dirsearch.json --format=json -q'
+                        }
+                    }
+                    post {
+                        success {
+                            archiveArtifacts 'dirsearch.json'
+                        }
+                    }
+                }
+
+                stage('Feroxbuster') {
+                    agent {
+                        docker {
+                            image 'csalab/dast:latest'
+                        }
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh 'feroxbuster -q --json -A -r -k -C 404 -C 403 -o feroxbuster.json --url ${URL_TARGET}'
+                        }
+                    }
+                    post {
+                        success {
+                            archiveArtifacts 'feroxbuster.json'
                         }
                     }
                 }
             }
         }
-        stage('Generate report') {
+
+        stage('Sqliscan') {
             agent {
                 docker {
                     image 'csalab/dast:latest'
@@ -127,10 +250,21 @@ pipeline {
             }
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    sh 'echo "Generating report"'
+                    sh '/root/sqlmap/sqlmap.py -u ${URL_TARGET} --form --random-agent --batch --crawl=10 --dbs'
+                }
+            }
+        }
+
+        stage('Report') {
+            agent {
+                docker {
+                    image 'csalab/dast:latest'
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                     sh 'python3 /root/xml2json.py nmap.xml nmap.json'
-                    sh 'ls -l *.json'
-                    sh 'rm -rf *.xml *.json reports'
+                    sh 'ls -la'
                 }
             }
         }
