@@ -158,7 +158,6 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             cleanWs()
-                            sh 'docker pull public.ecr.aws/portswigger/dastardly:latest'
                             sh '''
                                 docker run --user $(id -u) -v ${WORKSPACE}:${WORKSPACE}:rw \
                                 -e BURP_START_URL=${URL_TARGET} \
@@ -196,7 +195,8 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '/opt/arachni/bin/arachni ${URL_TARGET}'
+                            sh 'su dast -c "/opt/arachni/bin/arachni ${URL_TARGET}" || true'
+                            sh 'ls -lah'
                         }
                     }
                 }

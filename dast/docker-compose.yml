@@ -13,8 +13,9 @@ services:
       dast:
 
   dast-ci:
-    image: 'csalab/dast-ci:latest'
-    hostname: dast-ci.lab
+    image: 'csalab/dast:latest'
+    hostname: dast.lab
+    restart: always
     build:
       context: ./build/
       dockerfile: dast-ci.Dockerfile
