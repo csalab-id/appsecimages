@@ -1,15 +1,20 @@
 FROM golang:1-alpine3.20 as builder
-RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest && \
-    go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
-    go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest && \
-    go install -v github.com/projectdiscovery/katana/cmd/katana@latest
+RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+RUN go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+RUN go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+RUN apk add --no-cache git gcc musl-dev && \
+    go install github.com/projectdiscovery/katana/cmd/katana@latest
 
 FROM python:3-alpine
 LABEL maintainer="admin@csalab.id"
 WORKDIR /root
 RUN apk update && \
-    apk upgrade && \
-    apk add git \
+    apk -U upgrade --no-cache && \
+    apk add --no-cache \
+        bind-tools \
+        ca-certificates \
+        chromium \
+        git \
         nmap \
         nmap-scripts \
         perl \
