@@ -154,6 +154,7 @@ pipeline {
                 }
 
                 stage('Dastardly') {
+                    agent any
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             cleanWs()
@@ -195,7 +196,7 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '/opt/arachni/arachni ${URL_TARGET}'
+                            sh '/opt/arachni/bin/arachni ${URL_TARGET}'
                         }
                     }
                 }
