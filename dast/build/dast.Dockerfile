@@ -11,6 +11,7 @@ WORKDIR /root
 RUN apk update && \
     apk -U upgrade --no-cache && \
     apk add --no-cache \
+        jq \
         bind-tools \
         ca-certificates \
         chromium \
